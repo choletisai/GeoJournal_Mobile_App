@@ -27,16 +27,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.geojournal.viewmodel.JournalViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddEntryScreen(onBackClick: () -> Unit) {
-
+fun AddEntryScreen(
+    viewModel: JournalViewModel,
+    onBackClick: () -> Unit,
+    onSaved: () -> Unit
+) {
     val context = LocalContext.current
 
-    // these keep what the user types
+    // what the user types
     var title by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
+
+    // becomes true when the user presses Save with an empty title
+    var titleError by remember { mutableStateOf(false) }
+
+    // maximum lengths, so the app does not get very large text
+    val maxTitle = 50
+    val maxNote = 500
 
     Scaffold(
         topBar = {
@@ -64,9 +75,23 @@ fun AddEntryScreen(onBackClick: () -> Unit) {
 
             OutlinedTextField(
                 value = title,
-                onValueChange = { title = it },
+                onValueChange = {
+                    // only accept the text if it is not too long
+                    if (it.length <= maxTitle) {
+                        title = it
+                        titleError = false
+                    }
+                },
                 label = { Text("Title") },
                 singleLine = true,
+                isError = titleError,
+                supportingText = {
+                    if (titleError) {
+                        Text("Please enter a title")
+                    } else {
+                        Text("${title.length}/$maxTitle")
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -74,9 +99,14 @@ fun AddEntryScreen(onBackClick: () -> Unit) {
 
             OutlinedTextField(
                 value = note,
-                onValueChange = { note = it },
+                onValueChange = {
+                    if (it.length <= maxNote) {
+                        note = it
+                    }
+                },
                 label = { Text("Write your note") },
                 minLines = 4,
+                supportingText = { Text("${note.length}/$maxNote") },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -84,13 +114,14 @@ fun AddEntryScreen(onBackClick: () -> Unit) {
 
             Button(
                 onClick = {
-                    // Saving is not built yet, it comes in Sprint 2.
-                    // For now just show a small message.
-                    Toast.makeText(
-                        context,
-                        "Saving will be added in Sprint 2",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    if (title.isBlank()) {
+                        // title is empty, show the error and do not save
+                        titleError = true
+                    } else {
+                        viewModel.addEntry(title.trim(), note.trim())
+                        Toast.makeText(context, "Memory saved", Toast.LENGTH_SHORT).show()
+                        onSaved()
+                    }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
