@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.geojournal.screens.AddEntryScreen
+import com.example.geojournal.screens.CameraScreen
 import com.example.geojournal.screens.EntryDetailScreen
 import com.example.geojournal.screens.HomeScreen
 import com.example.geojournal.screens.SettingsScreen
@@ -17,9 +18,6 @@ import com.example.geojournal.viewmodel.JournalViewModel
 fun AppNavigation() {
 
     val navController = rememberNavController()
-
-    // One ViewModel is made here and given to the screens that need it.
-    // This way all screens use the same data.
     val journalViewModel: JournalViewModel = viewModel()
 
     NavHost(
@@ -27,26 +25,37 @@ fun AppNavigation() {
         startDestination = Routes.HOME
     ) {
 
-        // Home screen
         composable(Routes.HOME) {
             HomeScreen(
                 viewModel = journalViewModel,
-                onAddClick = { navController.navigate(Routes.ADD_ENTRY) },
+                onAddClick = {
+                    // start with a clean draft each time a new memory is begun
+                    journalViewModel.clearDraft(deletePhoto = true)
+                    navController.navigate(Routes.ADD_ENTRY)
+                },
                 onSettingsClick = { navController.navigate(Routes.SETTINGS) },
                 onEntryClick = { id -> navController.navigate(Routes.entryDetail(id)) }
             )
         }
 
-        // Add entry screen
         composable(Routes.ADD_ENTRY) {
             AddEntryScreen(
                 viewModel = journalViewModel,
                 onBackClick = { navController.popBackStack() },
+                onOpenCamera = { navController.navigate(Routes.CAMERA) },
                 onSaved = { navController.popBackStack() }
             )
         }
 
-        // Detail screen, it receives the id of the entry
+        // The camera is its own screen. After the photo is taken we go back to Add Entry.
+        composable(Routes.CAMERA) {
+            CameraScreen(
+                viewModel = journalViewModel,
+                onBackClick = { navController.popBackStack() },
+                onPhotoTaken = { navController.popBackStack() }
+            )
+        }
+
         composable(
             route = Routes.ENTRY_DETAIL,
             arguments = listOf(
@@ -62,7 +71,6 @@ fun AppNavigation() {
             )
         }
 
-        // Settings screen
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 onBackClick = { navController.popBackStack() }

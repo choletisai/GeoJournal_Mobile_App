@@ -4,9 +4,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -29,9 +31,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.geojournal.model.JournalEntry
 import com.example.geojournal.viewmodel.JournalViewModel
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,17 +46,10 @@ fun EntryDetailScreen(
     viewModel: JournalViewModel,
     onBackClick: () -> Unit
 ) {
-    // the entry we load from the database (null until it is found)
     var entry by remember { mutableStateOf<JournalEntry?>(null) }
-
-    // true while we are waiting for the database
     var isLoading by remember { mutableStateOf(true) }
-
-    // true when the delete question is on the screen
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // This runs when the screen opens (and again if the id changes).
-    // It asks the database for the entry with this id.
     LaunchedEffect(entryId) {
         entry = viewModel.getEntryById(entryId)
         isLoading = false
@@ -69,7 +68,6 @@ fun EntryDetailScreen(
                     }
                 },
                 actions = {
-                    // the delete button only shows when an entry was found
                     if (entry != null) {
                         IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(
@@ -103,12 +101,27 @@ fun EntryDetailScreen(
                     .verticalScroll(rememberScrollState())
             ) {
                 if (currentEntry == null) {
-                    // wrong id, no crash, only a message
                     Text(
                         text = "Sorry, this entry could not be found.",
                         style = MaterialTheme.typography.bodyLarge
                     )
                 } else {
+
+                    // the photo is shown at the top, only if the memory has one
+                    val photo = currentEntry.photoPath
+                    if (photo != null) {
+                        AsyncImage(
+                            model = File(photo),
+                            contentDescription = "Photo of " + currentEntry.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(240.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
                     Text(
                         text = currentEntry.title,
                         style = MaterialTheme.typography.headlineMedium
@@ -142,17 +155,17 @@ fun EntryDetailScreen(
         }
     }
 
-    // the question that appears before deleting
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("Delete memory?") },
-            text = { Text("This memory will be removed from the phone and cannot be brought back.") },
+            text = { Text("This memory and its photo will be removed from the phone and cannot be brought back.") },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showDeleteDialog = false
-                        viewModel.deleteEntry(entryId)
+                        // the whole entry is given, so the photo file can be deleted too
+                        entry?.let { viewModel.deleteEntry(it) }
                         onBackClick()
                     }
                 ) {

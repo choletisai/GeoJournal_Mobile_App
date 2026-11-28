@@ -64,4 +64,15 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+
+    // camera
+    implementation("androidx.camera:camera-camera2:1.4.1")
+    implementation("androidx.camera:camera-lifecycle:1.4.1")
+    implementation("androidx.camera:camera-view:1.4.1")
+
+    // location
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // shows photos on the screen
+    implementation("io.coil-kt:coil-compose:2.7.0")
 }

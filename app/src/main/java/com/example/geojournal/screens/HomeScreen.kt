@@ -34,6 +34,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.geojournal.model.JournalEntry
 import com.example.geojournal.viewmodel.JournalViewModel
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -124,18 +132,38 @@ fun EntryCard(entry: JournalEntry, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable { onClick() }
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = entry.title,
-                style = MaterialTheme.typography.titleMedium
-            )
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
 
-            Spacer(modifier = Modifier.height(4.dp))
+            // show a small photo only if the memory has one
+            val photo = entry.photoPath
+            if (photo != null) {
+                AsyncImage(
+                    model = File(photo),
+                    contentDescription = "Photo of " + entry.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+            }
 
-            Text(
-                text = entry.place + " - " + entry.date,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Column {
+                Text(
+                    text = entry.title,
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = entry.place + " - " + entry.date,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
     }
 }
